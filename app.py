@@ -5,12 +5,11 @@
 
 from flask import Flask, jsonify, render_template, request, redirect
 
-
-
 import pandas as pd
 import numpy as np
 import json
 import re
+import pickle
 
 from sqlalchemy import create_engine, inspect
 from sqlalchemy.ext.automap import automap_base
@@ -18,7 +17,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, Float
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-
+from xgboost import XGBClassifier
 from config import db_key
 
 
@@ -48,20 +47,20 @@ engine = create_engine(f'postgresql://{rds_connection_string}')
 ###################
 
 # Return the dashboard homepage
-@app.route("/")
-def index():
-    return render_template("index.html")
+# @app.route("/")
+# def index():
+#     return render_template("index.html")
 
-# Return the consumption page
-@app.route("/consumption")
-def consumption():
-    return render_template("consumption.html")
+# # Return the consumption page
+# @app.route("/consumption")
+# def consumption():
+#     return render_template("consumption.html")
 
 
-# Return the capacity page
-@app.route("/capacity")
-def capacity():
-    return render_template("capacity.html")
+# # Return the capacity page
+# @app.route("/capacity")
+# def capacity():
+#     return render_template("capacity.html")
 
 # base queries
 sql_capacity = "select * from installed_solar_capacity"
@@ -76,14 +75,14 @@ def get_data(sql_statement):
     return data_dict
 
 
-@app.route("/api/consumption")
-def api_consumption():
-    data = get_data(sql_consumption)
-    return jsonify(data)
+# @app.route("/api/consumption")
+# def api_consumption():
+#     data = get_data(sql_consumption)
+#     return jsonify(data)
 
-@app.route("/api/capacity")
-def api_capacity():
-    return jsonify(get_data(sql_capacity))
+# @app.route("/api/capacity")
+# def api_capacity():
+#     return jsonify(get_data(sql_capacity))
 
 @app.route("/api")
 def api_all_data():
@@ -106,14 +105,7 @@ if __name__ == "__main__":
 
 # ---------------------------------------------
 
-from flask import Flask, render_template, redirect, request
-from xgboost import XGBClassifier
-import pandas as pd
-import numpy as np
-import pickle
 
-# Create an instance of Flask
-app = Flask(__name__)
 
 with open(f'best_xgb_model.pickle', "rb") as f:
     model = pickle.load(f)
@@ -126,8 +118,8 @@ def home():
     output_message = ""
 
     if request.method == "POST":
-        recency = float(request.form["entity"])
-        frequency = float(request.form["time"])
+        entity = float(request.form["entity"])
+        year = float(request.form["time"])
         
 
         # data must be converted to df with matching feature names before predict
